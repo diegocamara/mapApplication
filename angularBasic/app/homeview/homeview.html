@@ -1,0 +1,48 @@
+<style>
+  .map-container{
+       width:100% !important;
+       height:100% !important;
+     }  
+  .menu-button{
+      position: absolute;
+      left:10px;
+      top:10px;
+  }
+</style>
+<div layout="row" class="map-container">   
+    <md-sidenav
+        class="md-sidenav-left md-whiteframe-4dp"
+        md-component-id="left">
+
+      <md-toolbar class="md-hue-2"> 
+          <div class="md-toolbar-tools">
+              <h2>
+                <span>Filtrar</span>
+              </h2>
+              <span flex></span>
+            <md-button class="md-icon-button" aria-label="Fechar"
+                       ng-click="close()">
+                <md-icon md-svg-icon="icons/ic_close_white_24px.svg"></md-icon>            
+            </md-button>
+          </div>       
+      </md-toolbar>
+        <md-content layout-padding>
+            
+        </md-content>
+    </md-sidenav> 
+    
+    <div flex>
+        <md-content class="map-container">           
+            <div id="map">
+            </div>
+        </md-content>        
+
+        <md-button class="md-fab md-primary menu-button" aria-label="Menu"
+                   ng-click="toggleLeft()">
+            <md-icon md-svg-icon="icons/ic_menu_white_24px.svg"></md-icon>
+        </md-button>
+    </div>
+</div>
+
+
+
