@@ -7,7 +7,7 @@ module.exports = {
 
     obterUrlCsvDemandasRecife: function(callback){
 
-      var urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7';
+      var urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/monitoramento-das-areas-de-riscos/resource/5eaed1e8-aa7f-48d7-9512-638f80874870';
         
       var request = require('request');      
       
