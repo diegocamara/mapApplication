@@ -1,0 +1,32 @@
+{
+  "development": {
+    "dialect": "mongodb",
+    "storage": "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb",
+    "options":{
+      "server":{"socketOptions": { "keepAlive": 1, "connectTimeoutMS": 30000 } },
+      "replset":{ "socketOptions": { "keepAlive": 1, "connectTimeoutMS" : 30000 } }
+    }
+  },
+  "test":{
+    "username": "root",
+    "password": "1234567",
+    "database": "productdeliverydb",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "production":{
+    "username": "root",
+    "password": "1234567",
+    "database": "productdeliverydb",
+    "host": "localhost",
+    "dialect": "mysql"
+  },
+  "localhost":{
+    "dialect": "mongodb",
+    "storage": "mongodb://localhost/mapeventsdb",
+    "options":{
+      "server":{"socketOptions": { "keepAlive": 1, "connectTimeoutMS": 30000 } },
+      "replset":{ "socketOptions": { "keepAlive": 1, "connectTimeoutMS" : 30000 } }
+    }
+  }
+}
