@@ -2,6 +2,7 @@ var cfg = require('_/config');
 var log = require('_/log');
 var models = require('_/app/models');
 var app = require('_/app');
+var services = require('_/app/services');
 
 // var csv = require('fast-csv');
 
@@ -19,6 +20,11 @@ models.mongoose.connection.once('open', function(callback){
     
     app.listen(cfg.port, function(){
         console.log('app listening on port', cfg.port);
+
+        services.verificarNovosDados(function(data){
+
+        });
+
     });
 
 });

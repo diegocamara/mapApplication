@@ -18,5 +18,9 @@
     "mongodb-uri": "^0.9.7",
     "jsonfile": "^2.2.3",
     "body-parser": "^1.15.0"
+  },
+  "devDependencies": {
+    "agenda": "^0.8.1",
+    "batchflow": "^0.4.0"
   }
 }
