@@ -1,6 +1,23 @@
 var models = require('../models');
 var services = require('../services');
 
+exports.getCitizenRequests = function(req, res){
+
+  var CitizenRequest = new models.CitizenRequest({});
+
+  CitizenRequest.collection.find({}).toArray(function(err, result){    
+    
+    if(err){
+      throw err;
+    }
+
+    res.send(result);
+
+    
+  });
+
+}
+
 exports.insertUserPost = function(req, res){
 
   var categoria = req.body.categoria;

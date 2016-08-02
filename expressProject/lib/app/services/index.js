@@ -12,16 +12,20 @@ module.exports = {
 
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
-      var agenda = new Agenda({processEvery: '30 seconds', priority:'high', db: {address: mongoConnectionString}});
+      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
 
-      agenda.define('job', {priority: 'high'}, function(job, done){
+      agenda.define('job', 
+                    {priority: 'highest',
+                    concurrency: 1,
+                    lockLimit: 0,
+                    lockLifetime: 0}, 
+                    function(job, done){
 
         console.log('Verificando novos dados...');   
 
         try{
 
-          getCitizenRequest(function(json){
-          //  console.log(json);           
+          getCitizenRequest(function(json){                 
            done();
            console.log('Bath done.');
           });
@@ -35,7 +39,7 @@ module.exports = {
 
       agenda.on('ready', function(){
 
-        agenda.every('30 seconds', 'job');
+        agenda.every('15 minutes', 'job');
 
         agenda.start();
         console.log('Agenda starting...');
@@ -58,11 +62,10 @@ module.exports = {
       obterUrlCsvDemandasRecife(function(urlRequest){
         
         url = urlRequest;
-        console.log(url);
-        //var jsonLoader = obterJsonLoaderDemandasRecife();
+        console.log(url);       
 
         jsonLoader.getJsonFromWeb(url, function(json){
-          console.log(url);
+          
           var models = require('../models');
           var citizenRequests = [];
 
