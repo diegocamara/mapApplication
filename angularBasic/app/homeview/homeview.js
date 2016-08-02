@@ -9,12 +9,53 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   });
 }])
 
-.controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', function($scope, $timeout, $mdSidenav) {
+.factory('CitizenRequestService', function($http){
+
+  var webServiceUrl = 'http://localhost:3000/';
+
+  return{
+
+    getCitizenRequests: function(filter){
+
+      var url = webServiceUrl + 'getcitizenrequest/';
+
+     return $http.get(url,{
+        params:{
+          initialDate: filter.initialDate,
+          finalDate: filter.finalDate
+        }
+      }).then(function(response){
+
+       return response.data;
+
+      }, function(response){
+
+         console.log(response);
+
+      });
+
+    }
+
+  }
+
+})
+
+.controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 
+             function($scope, $timeout, $mdSidenav, CitizenRequestService) {
+
+  $scope.filter = {
+    initialDate: new Date(),
+    finalDate: new Date()
+  };
+
+  $scope.citizenRequests = []; 
+
+ 
 
   $scope.toggleLeft = buildToggler('left');
   $scope.close = close('left');
 
-  var leafletMap = L.map('map').setView([-8.0564394, -34.9221501], 14);
+  var leafletMap = L.map('map').setView([-8.0564394, -34.9221501], 14);    
 
   leafletMap.zoomControl.setPosition('topright');
 
@@ -22,7 +63,35 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
       attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
       maxZoom: 18,
   }).addTo(leafletMap);
-  
+
+  var requestsLayer;   
+
+  CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
+
+    if(citizenRequests && citizenRequests.length > 0){
+
+     
+      for(var citizenRequestIndex = 0; citizenRequestIndex < citizenRequests.length; citizenRequestIndex++){         
+
+        var citizenRequest = citizenRequests[citizenRequestIndex];
+
+        if(citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== ''){
+
+        var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
+        var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
+        
+        L.marker([latitude, longitude], {clickable: true, draggable: true, zIndexOffset: 1000}).addTo(leafletMap);
+
+        }
+        
+      }            
+      
+      leafletMap.invalidateSize(true);                          
+
+    }
+
+  });
+
 
   $timeout(function() {
     leafletMap.invalidateSize();
