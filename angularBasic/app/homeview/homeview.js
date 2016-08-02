@@ -55,7 +55,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   $scope.toggleLeft = buildToggler('left');
   $scope.close = close('left');
 
-  var leafletMap = L.map('map').setView([-8.0564394, -34.9221501], 14);    
+  var leafletMap = L.map('map').setView([-8.0564394, -34.9221501], 12);    
 
   leafletMap.zoomControl.setPosition('topright');
 
@@ -64,12 +64,13 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
       maxZoom: 18,
   }).addTo(leafletMap);
 
+  L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+
   var requestsLayer;   
 
   CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
 
     if(citizenRequests && citizenRequests.length > 0){
-
      
       for(var citizenRequestIndex = 0; citizenRequestIndex < citizenRequests.length; citizenRequestIndex++){         
 
@@ -80,7 +81,16 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
         var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
         
-        L.marker([latitude, longitude], {clickable: true, draggable: true, zIndexOffset: 1000}).addTo(leafletMap);
+        // console.log(citizenRequests[citizenRequestIndex]);
+
+        var blueMarker = L.AwesomeMarkers.icon({
+          icon: 'fa-exclamation-triangle animated pulse',
+          markerColor: 'blue'
+        });
+
+        var marker = L.marker([latitude, longitude], {icon: blueMarker})
+        .bindPopup(citizenRequests[citizenRequestIndex].descricao)
+        .addTo(leafletMap);
 
         }
         
