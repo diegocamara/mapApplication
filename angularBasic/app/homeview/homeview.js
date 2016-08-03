@@ -41,16 +41,24 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 })
 
 .controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 
-             function($scope, $timeout, $mdSidenav, CitizenRequestService) {
-
+             function($scope, $timeout, $mdSidenav, CitizenRequestService) {              
+   
+   var dataAtual = new Date();
+  
   $scope.filter = {
-    initialDate: new Date(),
-    finalDate: new Date()
-  };
+    initialDate: dataAtual,
+    finalDate: dataAtual
+  };  
+    
+  $scope.maxDate = $scope.filter.finalDate;
+
+  $scope.minDate = $scope.filter.initialDate;
 
   $scope.citizenRequests = []; 
 
- 
+  $scope.changeInitialDate = function(){
+    $scope.minDate = $scope.filter.initialDate;
+  } 
 
   $scope.toggleLeft = buildToggler('left');
   $scope.close = close('left');
@@ -68,6 +76,11 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   var requestsLayer;   
 
+  var blueMarker = L.AwesomeMarkers.icon({
+          icon: 'fa-exclamation-triangle animated pulse',
+          markerColor: 'orange'
+        });
+
   CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
 
     if(citizenRequests && citizenRequests.length > 0){
@@ -80,13 +93,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
         var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
         var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
-        
-        // console.log(citizenRequests[citizenRequestIndex]);
-
-        var blueMarker = L.AwesomeMarkers.icon({
-          icon: 'fa-exclamation-triangle animated pulse',
-          markerColor: 'blue'
-        });
+        $scope.citizenRequests.push(citizenRequests[citizenRequestIndex]);
+        // console.log(citizenRequests[citizenRequestIndex]);       
 
         var marker = L.marker([latitude, longitude], {icon: blueMarker})
         .bindPopup(citizenRequests[citizenRequestIndex].descricao)
@@ -106,7 +114,6 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   $timeout(function() {
     leafletMap.invalidateSize();
   }, 10);
-
 
 
   function buildToggler(navId){
