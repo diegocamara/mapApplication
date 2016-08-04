@@ -7,59 +7,75 @@ module.exports = {
     },
         
     verificarNovosDados: function(callback){
-      
-      var Agenda = require('agenda');
 
-      var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
+      var demandas = [
+        { nome: 'Demandas com localização',
+          urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c',
+          getRequest: obterComLatitudeLongitude
+        },
+        {
+          nome: 'Demandas de serviços 156',
+          urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
+          getRequest: obterDemandasDeServicos156
+        }        
+      ];      
 
-      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
+      verificarDemandas(demandas, 0);
+            
+      // var Agenda = require('agenda');
 
-      agenda.define('job', 
-                    {priority: 'highest',
-                    concurrency: 1,
-                    lockLimit: 0,
-                    lockLifetime: 0}, 
-                    function(job, done){
+      // var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
-        console.log('Verificando novos dados em ' + new Date() + '... ');   
+      // var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
 
-        try{
+      // agenda.define('job', 
+      //               {priority: 'highest',
+      //               concurrency: 1,
+      //               lockLimit: 0,
+      //               lockLifetime: 0}, 
+      //               function(job, done){
 
-          getCitizenRequest(function(json){                 
-           done();
-           console.log('Bath finalizado em ' + new Date() + '.');
-          });
+      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
 
-        }catch(err){
-           console.err(err);
-           done();
-        }       
+      //   try{
 
-      });      
+      //     var urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c';
 
-      agenda.on('ready', function(){
+      //     getCitizenRequest(urlDemandasRecife, obterComLatitudeLongitude ,function(json){                 
+      //      done();
+      //      console.log('Bath finalizado em ' + new Date() + '.');
+      //     });
 
-        agenda.every('15 minutes', 'job');
+      //   }catch(err){
+      //      console.err(err);
+      //      done();
+      //   }       
 
-        agenda.start();
-        console.log('Agenda starting...');
+      // });      
 
-      });    
+      // agenda.on('ready', function(){
 
-      agenda.on('error', function(){
+      //   agenda.every('15 minutes', 'job');
 
-      });  
+      //   agenda.start();
+      //   console.log('Agenda starting...');
+
+      // });    
+
+      // agenda.on('error', function(){
+
+      // });
 
     }
 
 }
 
  
-  function getCitizenRequest(callback){
+  function getCitizenRequest(htmlUrlToRequestData, getRequest, callback){
             
       var url;
 
-      obterUrlCsvDemandasRecife(function(error, urlRequest){
+      obterUrlCsvDemandasRecife(htmlUrlToRequestData, function(error, urlRequest){
 
         if(!error){
           
@@ -71,42 +87,9 @@ module.exports = {
             var models = require('../models');
             var citizenRequests = [];
 
-            for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){
-              
-              var splitResult = json[citizenRequestIndex].solicitacao_data.toString().split('-');
-              var year = splitResult[0];
-              var mouth = splitResult[1];
-              var day = splitResult[2];
+            for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){              
 
-              var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
-              
-              var citizenRequest = {            
-                ano: json[citizenRequestIndex].ano,
-                mes: json[citizenRequestIndex].mes,
-                numeroProcesso: json[citizenRequestIndex].processo_numero.toString(),
-                data: new Date(dateFormat),
-                hora: json[citizenRequestIndex].solicitacao_hora,
-                descricao: json[citizenRequestIndex].solicitacao_descricao,
-                regional: json[citizenRequestIndex].solicitacao_regional,
-                bairro: json[citizenRequestIndex].solicitacao_bairro,
-                localidade: json[citizenRequestIndex].solicitacao_localidade,
-                endereco: json[citizenRequestIndex].solicitacao_endereco,
-                microregiao: json[citizenRequestIndex].solicitacao_microrregiao,
-                plantao: json[citizenRequestIndex].solicitacao_plantao,
-                origemChamado: json[citizenRequestIndex].solicitacao_origem_chamado,
-                loc:{
-                  type: {type: String, default: 'Point'},
-                  coordinates: [json[citizenRequestIndex].latitude, json[citizenRequestIndex].longitude]
-                },
-                vitimas: json[citizenRequestIndex].solicitacao_vitimas,
-                vitimasFatais: json[citizenRequestIndex].solicitacao_vitimas_fatais,
-                situacao: json[citizenRequestIndex].processo_situacao,
-                tipo: json[citizenRequestIndex].processo_tipo,
-                origemProcesso: json[citizenRequestIndex].processo_origem,
-                localizacaoProcesso: json[citizenRequestIndex].processo_localizacao,
-                statusProcesso: json[citizenRequestIndex].processo_status,
-                dataConclusaoProcesso: json[citizenRequestIndex].processo_data_conclusao
-              };            
+              citizenRequest = getRequest(json[citizenRequestIndex]);       
 
               citizenRequests.push(citizenRequest);              
               
@@ -135,7 +118,7 @@ module.exports = {
               
         if(existingDocument){
 
-          CitizenRequest.collection.update({numeroProcesso: citizenRequests[index].numeroProcesso}, citizenRequests[index], function(err, result){
+          CitizenRequest.collection.update(citizenRequests[index].query, citizenRequests[index], function(err, result){
 
             if(err){
               throw err;
@@ -227,10 +210,10 @@ module.exports = {
 
   }
 
-  function obterUrlCsvDemandasRecife(callback){
+  function obterUrlCsvDemandasRecife(htmlUrlToRequestData, callback){
 
-      var urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c';
-        
+      var urlDemandasRecife = htmlUrlToRequestData;
+
       var request = require('request');      
       
       console.log('Requisitando código html...');
@@ -275,4 +258,101 @@ module.exports = {
 
       });     
      
+    }
+
+    function verificarDemandas(demandas, index){
+
+      if(demandas && demandas.length > 0 && (index < demandas.length)){
+
+        var demanda = demandas[index];
+
+        getCitizenRequest(demanda.urlDemandaRecife, demanda.getRequest, function(json){
+           console.log('Bath ' + demanda.nome + ' finalizado em ' + new Date() + '.');
+           verificarDemandas(demandas, ++index);
+        });
+
+      }
+
+    }
+
+    function obterComLatitudeLongitude(requestDoc){
+             
+              var splitResult = requestDoc.solicitacao_data.toString().split('-');
+              var year = splitResult[0];
+              var mouth = splitResult[1];
+              var day = splitResult[2];
+
+              var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
+              
+              var citizenRequest = {            
+                ano: requestDoc.ano,
+                mes: requestDoc.mes,
+                numeroProcesso: requestDoc.processo_numero.toString(),
+                data: new Date(dateFormat),
+                hora: requestDoc.solicitacao_hora,
+                descricao: requestDoc.solicitacao_descricao,
+                regional: requestDoc.solicitacao_regional,
+                bairro: requestDoc.solicitacao_bairro,
+                localidade: requestDoc.solicitacao_localidade,
+                endereco: requestDoc.solicitacao_endereco,
+                microregiao: requestDoc.solicitacao_microrregiao,
+                plantao: requestDoc.solicitacao_plantao,
+                origemChamado: requestDoc.solicitacao_origem_chamado,
+                loc:{
+                  type: {type: String, default: 'Point'},
+                  coordinates: [requestDoc.latitude, requestDoc.longitude]
+                },
+                vitimas: requestDoc.solicitacao_vitimas,
+                vitimasFatais: requestDoc.solicitacao_vitimas_fatais,
+                situacao: requestDoc.processo_situacao,
+                tipo: requestDoc.processo_tipo,
+                origemProcesso: requestDoc.processo_origem,
+                localizacaoProcesso: requestDoc.processo_localizacao,
+                statusProcesso: requestDoc.processo_status,
+                dataConclusaoProcesso: requestDoc.processo_data_conclusao,
+                query: {
+                  numeroProcesso: this.numeroProcesso
+                }
+              }; 
+
+              return citizenRequest;
+
+    }
+
+    function obterDemandasDeServicos156(requestDoc){
+              
+              var splitResult = requestDoc.DATA_DEMANDA.toString().split('-');
+              var year = splitResult[0];
+              var month = splitResult[1];
+              var day = splitResult[2];
+
+              var dateFormat = year + '-' + month + '-' + day + ' 00:00:00';
+              
+              var citizenRequest = {            
+                ano: year,
+                mes: month,
+                numeroProcesso: requestDoc.SERVICO_CODIGO.toString(),
+                data: new Date(dateFormat),
+                descricao: requestDoc.SERVICO_DESCRICAO,
+                bairro: requestDoc.BAIRRO,
+                endereco: requestDoc.LOGRADOURO + ' Nº: ' +requestDoc.NUMERO,
+                situacao: requestDoc.SITUACAO,
+                tipo: requestDoc.GRUPOSERVICO_DESCRICAO,
+                query: {
+                  'and': [
+                    {ano: this.ano},
+                    {mes: this.mes},
+                    {numeroProcesso: this.numeroProcesso},
+                    {data: this.data},
+                    {descricao: this.descricao},
+                    {bairro: this.bairro},
+                    {endereco:this.endereco},
+                    {situacao: this.situacao},
+                    {tipo: this.tipo}
+                  ]                 
+                }
+              }; 
+
+              return citizenRequest;
+
     }
