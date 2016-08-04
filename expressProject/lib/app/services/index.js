@@ -7,7 +7,7 @@ module.exports = {
     },
         
     verificarNovosDados: function(callback){
-          
+      
       var Agenda = require('agenda');
 
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
@@ -71,11 +71,18 @@ module.exports = {
 
           for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){
             
+            var splitResult = json[citizenRequestIndex].solicitacao_data.toString().split('-');
+            var year = splitResult[0];
+            var mouth = splitResult[1];
+            var day = splitResult[2];
+
+            var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
+            
             var citizenRequest = {            
               ano: json[citizenRequestIndex].ano,
               mes: json[citizenRequestIndex].mes,
               numeroProcesso: json[citizenRequestIndex].processo_numero.toString(),
-              data: json[citizenRequestIndex].solicitacao_data,
+              data: new Date(dateFormat),
               hora: json[citizenRequestIndex].solicitacao_hora,
               descricao: json[citizenRequestIndex].solicitacao_descricao,
               regional: json[citizenRequestIndex].solicitacao_regional,
@@ -99,6 +106,8 @@ module.exports = {
               dataConclusaoProcesso: json[citizenRequestIndex].processo_data_conclusao
             };   
 
+            console.log(citizenRequest.data);
+
             citizenRequests.push(citizenRequest);              
             
           }
@@ -117,7 +126,7 @@ module.exports = {
 
   }
 
-  function updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, index, callback){
+  function updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, index, callback){      
 
     if(citizenRequests !== undefined && citizenRequests.length > 0 && ((citizenRequests.length - index) >= 1)){
       

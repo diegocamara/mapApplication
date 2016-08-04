@@ -3,9 +3,12 @@ var services = require('../services');
 
 exports.getCitizenRequests = function(req, res){
 
+  var initialDate = req.query.initialDate;
+  var finalDate = req.query.finalDate;  
+  
   var CitizenRequest = new models.CitizenRequest({});
 
-  CitizenRequest.collection.find({}).toArray(function(err, result){    
+  CitizenRequest.collection.find({data: {$gte: new Date(initialDate), $lte: new Date(finalDate)}}).toArray(function(err, result){    
     
     if(err){
       throw err;

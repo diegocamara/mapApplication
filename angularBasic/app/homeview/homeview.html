@@ -11,8 +11,8 @@
   #filterButton{
       width:100%;
   }
-  .card{
-      height:200px;
+  .card-content{
+      width:100%;
   }
 </style>
 <div layout="row" class="map-container">   
@@ -42,7 +42,7 @@
                 </div>                             
             </div>
             <div layout="row">
-                <md-button id="filterButton" class="md-raised md-primary">Filtrar</md-button>
+                <md-button id="filterButton" class="md-raised md-primary" ng-click="getCitizenRequests()">Filtrar</md-button>
             </div>
         </md-content>
     </md-sidenav> 
@@ -53,23 +53,24 @@
             <div flex="70" id="map">
             </div>
 
-            <div flex="30" layout="column" layout-align="end center">                                
-                <md-card ng-repeat="citizenRequest in citizenRequests">
-                    <md-card-title>
-                    <md-card-title-text>
-                        <span class="md-headline">Card with image</span>
-                        <span class="md-subhead">Small</span>
-                    </md-card-title-text>
-                    <md-card-title-media>
-                        <div class="md-media-sm card-media"></div>
-                    </md-card-title-media>
-                    </md-card-title>
-                    <md-card-actions layout="row" layout-align="end center">
-                    <md-button>Action 1</md-button>
-                    <md-button>Action 2</md-button>
-                    </md-card-actions>
-                </md-card>
-                                                   
+            <div flex="30" layout="column" layout-align="end center">  
+                <md-content class="card-content">
+                    <md-card ng-repeat="citizenRequest in citizenRequests">
+                        <md-card-title>
+                        <md-card-title-text>
+                            <span class="md-headline">Card with image</span>
+                            <span class="md-subhead">Small</span>
+                        </md-card-title-text>
+                        <md-card-title-media>
+                            <div class="md-media-sm card-media"></div>
+                        </md-card-title-media>
+                        </md-card-title>
+                        <md-card-actions layout="row" layout-align="end center">
+                        <md-button>Action 1</md-button>
+                        <md-button>Action 2</md-button>
+                        </md-card-actions>
+                    </md-card>
+                </md-content>                      
             </div>
         </div>          
             

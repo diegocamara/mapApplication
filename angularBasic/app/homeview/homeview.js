@@ -17,12 +17,12 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
     getCitizenRequests: function(filter){
 
-      var url = webServiceUrl + 'getcitizenrequest/';
+     var url = webServiceUrl + 'getcitizenrequest/';      
 
      return $http.get(url,{
         params:{
-          initialDate: filter.initialDate,
-          finalDate: filter.finalDate
+          initialDate: getConsultDate(filter.initialDate),
+          finalDate: getConsultDate(filter.finalDate) 
         }
       }).then(function(response){
 
@@ -77,14 +77,19 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   var requestsLayer;   
 
   var blueMarker = L.AwesomeMarkers.icon({
-          icon: 'fa-exclamation-triangle animated pulse',
+          icon: 'fa-exclamation-triangle animated infinite pulse',
           markerColor: 'orange'
         });
 
-  CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
+  $scope.getCitizenRequests = function(){
 
-    if(citizenRequests && citizenRequests.length > 0){
+    CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
+
+    if(citizenRequests && citizenRequests.length > 0){     
      
+      var markers = [];
+      $scope.citizenRequests = [];
+
       for(var citizenRequestIndex = 0; citizenRequestIndex < citizenRequests.length; citizenRequestIndex++){         
 
         var citizenRequest = citizenRequests[citizenRequestIndex];
@@ -97,22 +102,33 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         // console.log(citizenRequests[citizenRequestIndex]);       
 
         var marker = L.marker([latitude, longitude], {icon: blueMarker})
-        .bindPopup(citizenRequests[citizenRequestIndex].descricao)
-        .addTo(leafletMap);
+        .bindPopup(citizenRequests[citizenRequestIndex].descricao);
+
+        markers.push(marker);
 
         }
         
-      }            
-      
-      leafletMap.invalidateSize(true);                          
+      }                        
 
     }
 
-  });
+    if(requestsLayer){
+        leafletMap.removeLayer(requestsLayer);
+      }
+      
+      requestsLayer = L.layerGroup(markers);          
+      requestsLayer.addTo(leafletMap);
 
+
+      leafletMap.invalidateSize(true); 
+
+    });
+
+  }
 
   $timeout(function() {
     leafletMap.invalidateSize();
+    $scope.getCitizenRequests();
   }, 10);
 
 
@@ -134,7 +150,17 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         // alert('Close is done.');
       });
     }
-  }
+  }  
 
 }]);
 
+function getConsultDate(date){
+
+    var year = date.getFullYear().toString();
+    var mouth = Number(date.getMonth() + 1).toString();
+    var day = date.getDate().toString();
+
+    var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
+
+    return new Date(dateFormat);
+  }
