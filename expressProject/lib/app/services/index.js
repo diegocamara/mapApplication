@@ -21,13 +21,13 @@ module.exports = {
                     lockLifetime: 0}, 
                     function(job, done){
 
-        console.log('Verificando novos dados...');   
+        console.log('Verificando novos dados em ' + new Date() + '... ');   
 
         try{
 
           getCitizenRequest(function(json){                 
            done();
-           console.log('Bath done.');
+           console.log('Bath finalizado em ' + new Date() + '.');
           });
 
         }catch(err){
@@ -59,68 +59,69 @@ module.exports = {
             
       var url;
 
-      obterUrlCsvDemandasRecife(function(urlRequest){
-        
-        url = urlRequest;
-        console.log(url);       
+      obterUrlCsvDemandasRecife(function(error, urlRequest){
 
-        jsonLoader.getJsonFromWeb(url, function(json){
+        if(!error){
           
-          var models = require('../models');
-          var citizenRequests = [];
+          url = urlRequest;
+          console.log("Obtendo arquivo .csv de: " + url);       
 
-          for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){
+          jsonLoader.getJsonFromWeb(url, function(json){
             
-            var splitResult = json[citizenRequestIndex].solicitacao_data.toString().split('-');
-            var year = splitResult[0];
-            var mouth = splitResult[1];
-            var day = splitResult[2];
+            var models = require('../models');
+            var citizenRequests = [];
 
-            var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
-            
-            var citizenRequest = {            
-              ano: json[citizenRequestIndex].ano,
-              mes: json[citizenRequestIndex].mes,
-              numeroProcesso: json[citizenRequestIndex].processo_numero.toString(),
-              data: new Date(dateFormat),
-              hora: json[citizenRequestIndex].solicitacao_hora,
-              descricao: json[citizenRequestIndex].solicitacao_descricao,
-              regional: json[citizenRequestIndex].solicitacao_regional,
-              bairro: json[citizenRequestIndex].solicitacao_bairro,
-              localidade: json[citizenRequestIndex].solicitacao_localidade,
-              endereco: json[citizenRequestIndex].solicitacao_endereco,
-              microregiao: json[citizenRequestIndex].solicitacao_microrregiao,
-              plantao: json[citizenRequestIndex].solicitacao_plantao,
-              origemChamado: json[citizenRequestIndex].solicitacao_origem_chamado,
-              loc:{
-                type: {type: String, default: 'Point'},
-                coordinates: [json[citizenRequestIndex].latitude, json[citizenRequestIndex].longitude]
-              },
-              vitimas: json[citizenRequestIndex].solicitacao_vitimas,
-              vitimasFatais: json[citizenRequestIndex].solicitacao_vitimas_fatais,
-              situacao: json[citizenRequestIndex].processo_situacao,
-              tipo: json[citizenRequestIndex].processo_tipo,
-              origemProcesso: json[citizenRequestIndex].processo_origem,
-              localizacaoProcesso: json[citizenRequestIndex].processo_localizacao,
-              statusProcesso: json[citizenRequestIndex].processo_status,
-              dataConclusaoProcesso: json[citizenRequestIndex].processo_data_conclusao
-            };   
+            for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){
+              
+              var splitResult = json[citizenRequestIndex].solicitacao_data.toString().split('-');
+              var year = splitResult[0];
+              var mouth = splitResult[1];
+              var day = splitResult[2];
 
-            console.log(citizenRequest.data);
+              var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
+              
+              var citizenRequest = {            
+                ano: json[citizenRequestIndex].ano,
+                mes: json[citizenRequestIndex].mes,
+                numeroProcesso: json[citizenRequestIndex].processo_numero.toString(),
+                data: new Date(dateFormat),
+                hora: json[citizenRequestIndex].solicitacao_hora,
+                descricao: json[citizenRequestIndex].solicitacao_descricao,
+                regional: json[citizenRequestIndex].solicitacao_regional,
+                bairro: json[citizenRequestIndex].solicitacao_bairro,
+                localidade: json[citizenRequestIndex].solicitacao_localidade,
+                endereco: json[citizenRequestIndex].solicitacao_endereco,
+                microregiao: json[citizenRequestIndex].solicitacao_microrregiao,
+                plantao: json[citizenRequestIndex].solicitacao_plantao,
+                origemChamado: json[citizenRequestIndex].solicitacao_origem_chamado,
+                loc:{
+                  type: {type: String, default: 'Point'},
+                  coordinates: [json[citizenRequestIndex].latitude, json[citizenRequestIndex].longitude]
+                },
+                vitimas: json[citizenRequestIndex].solicitacao_vitimas,
+                vitimasFatais: json[citizenRequestIndex].solicitacao_vitimas_fatais,
+                situacao: json[citizenRequestIndex].processo_situacao,
+                tipo: json[citizenRequestIndex].processo_tipo,
+                origemProcesso: json[citizenRequestIndex].processo_origem,
+                localizacaoProcesso: json[citizenRequestIndex].processo_localizacao,
+                statusProcesso: json[citizenRequestIndex].processo_status,
+                dataConclusaoProcesso: json[citizenRequestIndex].processo_data_conclusao
+              };            
 
-            citizenRequests.push(citizenRequest);              
-            
-          }
+              citizenRequests.push(citizenRequest);              
+              
+            }
 
-          var CitizenRequest = models.CitizenRequest;
-          var updateRequests = [];
-          console.log('Updating documents...');
-          updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, 0, function(){
-            callback(json);
+            var CitizenRequest = models.CitizenRequest;
+            var updateRequests = [];
+            console.log('Atualizando documents...');
+            updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, 0, function(){
+              callback(json);
+            });
+
           });
 
-
-        });
+        }
 
     }); 
 
@@ -140,7 +141,7 @@ module.exports = {
               throw err;
             }
 
-            console.log('Update process: ' + citizenRequests[index].numeroProcesso);            
+            console.log('Atualizando processo de numero: ' + citizenRequests[index].numeroProcesso);            
             updateRequests.push(citizenRequests[index]);
             updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, ++index, callback);                           
 
@@ -232,38 +233,45 @@ module.exports = {
         
       var request = require('request');      
       
-      console.log('Request html code...');
+      console.log('Requisitando código html...');
 
       request.get(urlDemandasRecife, function(error, response, body){
 
-        var htmlBody = JSON.stringify(body);
+        if(error){
+          console.log('Houve um erro ao requisitar o código html.');
+          callback(error, null);
+        }else{
 
-        var rePattern = new RegExp('URL:'); 
+          var htmlBody = JSON.stringify(body);
+
+          var rePattern = new RegExp('URL:'); 
+          
+          var arrMatches = htmlBody.match(rePattern);
+
+          htmlBody = htmlBody.substring(arrMatches.index, (arrMatches.index + 500));
+          
+          rePattern = new RegExp('>');
+
+          arrMatches = htmlBody.match(rePattern);                       
         
-        var arrMatches = htmlBody.match(rePattern);
-
-        htmlBody = htmlBody.substring(arrMatches.index, (arrMatches.index + 500));
+          var urlInitialIndex = arrMatches.index;
         
-        rePattern = new RegExp('>');
+          htmlBody = htmlBody.substring((urlInitialIndex + 1), (urlInitialIndex + 200));        
+          
+          rePattern = new RegExp('</');
 
-        arrMatches = htmlBody.match(rePattern);                       
-       
-        var urlInitialIndex = arrMatches.index;
-       
-        htmlBody = htmlBody.substring((urlInitialIndex + 1), (urlInitialIndex + 200));        
-        
-        rePattern = new RegExp('</');
+          arrMatches = htmlBody.match(rePattern);        
 
-        arrMatches = htmlBody.match(rePattern);        
+          urlInitialIndex = 0;
+          var urlFinalIndex = arrMatches.index;        
 
-        urlInitialIndex = 0;
-        var urlFinalIndex = arrMatches.index;        
+          htmlBody = htmlBody.substring(urlInitialIndex, urlFinalIndex);
 
-        htmlBody = htmlBody.substring(urlInitialIndex, urlFinalIndex);
+          if(htmlBody !== null && htmlBody !== undefined){
+            callback(null, htmlBody);
+          }
 
-        if(htmlBody !== null && htmlBody !== undefined){
-          callback(htmlBody);
-        }
+        }        
 
       });     
      
