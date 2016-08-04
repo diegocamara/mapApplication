@@ -9,62 +9,65 @@ module.exports = {
     verificarNovosDados: function(callback){
 
       var demandas = [
-        { nome: 'Demandas com localização',
-          urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c',
-          getRequest: obterComLatitudeLongitude
-        },
         {
           nome: 'Demandas de serviços 156',
           urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
           getRequest: obterDemandasDeServicos156
+        },
+        { 
+          nome: 'Demandas com localização',
+          urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c',
+          getRequest: obterComLatitudeLongitude
+        }
+        ,
+        { 
+          nome: 'Demandas Sedec Solicitações em Tempo Real',
+          urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/7723d193-c6d5-4859-933b-e8386e008b7e',
+          getRequest: obterDemandasDeServicosSedec
         }        
       ];      
+                 
+      var Agenda = require('agenda');
 
-      verificarDemandas(demandas, 0);
-            
-      // var Agenda = require('agenda');
+      var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
-      // var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
+      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
 
-      // var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
+      agenda.define('job', 
+                    {priority: 'highest',
+                    concurrency: 1,
+                    lockLimit: 0,
+                    lockLifetime: 0}, 
+                    function(job, done){
 
-      // agenda.define('job', 
-      //               {priority: 'highest',
-      //               concurrency: 1,
-      //               lockLimit: 0,
-      //               lockLifetime: 0}, 
-      //               function(job, done){
+        console.log('Verificando novos dados em ' + new Date() + '... ');   
 
-      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
+        try{         
 
-      //   try{
+          verificarDemandas(demandas, 0, function(){
+            done();
+            console.log('All done.');
+          });
 
-      //     var urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c';
+        }catch(err){
+           console.err(err);
+           done();
+        }       
 
-      //     getCitizenRequest(urlDemandasRecife, obterComLatitudeLongitude ,function(json){                 
-      //      done();
-      //      console.log('Bath finalizado em ' + new Date() + '.');
-      //     });
+      });      
 
-      //   }catch(err){
-      //      console.err(err);
-      //      done();
-      //   }       
+      agenda.on('ready', function(){
 
-      // });      
+        agenda.every('15 minutes', 'job');
 
-      // agenda.on('ready', function(){
+        agenda.start();
+        console.log('Agenda starting...');
 
-      //   agenda.every('15 minutes', 'job');
+      });    
 
-      //   agenda.start();
-      //   console.log('Agenda starting...');
+      agenda.on('error', function(){
 
-      // });    
-
-      // agenda.on('error', function(){
-
-      // });
+      });
 
     }
 
@@ -114,12 +117,16 @@ module.exports = {
 
     if(citizenRequests !== undefined && citizenRequests.length > 0 && ((citizenRequests.length - index) >= 1)){
       
-      CitizenRequest.findOne({numeroProcesso: citizenRequests[index].numeroProcesso}, function(err, existingDocument){
+      CitizenRequest.findOne(citizenRequests[index].query, function(err, existingDocument){
               
         if(existingDocument){
 
-          CitizenRequest.collection.update(citizenRequests[index].query, citizenRequests[index], function(err, result){
+          var query = citizenRequests[index].query;
 
+          delete citizenRequests[index]['query'];         
+
+          CitizenRequest.collection.update(query, citizenRequests[index], function(err, result){
+          
             if(err){
               throw err;
             }
@@ -156,7 +163,8 @@ module.exports = {
             }
           }
           
-          if(!isExistsUpdatedRequest){
+          if(!isExistsUpdatedRequest){  
+            delete citizenRequests[citizenRequestIndex]['query'];                      
             citizenRequestInsertList.push(citizenRequests[citizenRequestIndex]);
           }
 
@@ -173,6 +181,11 @@ module.exports = {
 
         }); 
       }else if(citizenRequests.length > 0 && updateRequests.length == 0){
+
+          for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){
+            delete citizenRequests[requestIndex]['query'];             
+          }
+
           insertCitizenRequests(citizenRequests, CitizenRequest, function(){
           
              if(callback){
@@ -193,7 +206,7 @@ module.exports = {
   }
 
   function insertCitizenRequests(citizenRequests, CitizenRequest, callback){
-
+   
     if(citizenRequests !== undefined && citizenRequests.length > 0){
 
       CitizenRequest.collection.insert(citizenRequests, function(err, docs){
@@ -260,7 +273,7 @@ module.exports = {
      
     }
 
-    function verificarDemandas(demandas, index){
+    function verificarDemandas(demandas, index, callback){
 
       if(demandas && demandas.length > 0 && (index < demandas.length)){
 
@@ -268,9 +281,11 @@ module.exports = {
 
         getCitizenRequest(demanda.urlDemandaRecife, demanda.getRequest, function(json){
            console.log('Bath ' + demanda.nome + ' finalizado em ' + new Date() + '.');
-           verificarDemandas(demandas, ++index);
+           verificarDemandas(demandas, ++index, callback);
         });
 
+      }else{
+        callback();
       }
 
     }
@@ -311,7 +326,7 @@ module.exports = {
                 statusProcesso: requestDoc.processo_status,
                 dataConclusaoProcesso: requestDoc.processo_data_conclusao,
                 query: {
-                  numeroProcesso: this.numeroProcesso
+                  numeroProcesso: requestDoc.processo_numero.toString()
                 }
               }; 
 
@@ -328,11 +343,13 @@ module.exports = {
 
               var dateFormat = year + '-' + month + '-' + day + ' 00:00:00';
               
+              var data = new Date(dateFormat);
+
               var citizenRequest = {            
                 ano: year,
                 mes: month,
                 numeroProcesso: requestDoc.SERVICO_CODIGO.toString(),
-                data: new Date(dateFormat),
+                data: data,
                 descricao: requestDoc.SERVICO_DESCRICAO,
                 bairro: requestDoc.BAIRRO,
                 endereco: requestDoc.LOGRADOURO + ' Nº: ' +requestDoc.NUMERO,
@@ -340,17 +357,62 @@ module.exports = {
                 tipo: requestDoc.GRUPOSERVICO_DESCRICAO,
                 query: {
                   'and': [
-                    {ano: this.ano},
-                    {mes: this.mes},
-                    {numeroProcesso: this.numeroProcesso},
-                    {data: this.data},
-                    {descricao: this.descricao},
-                    {bairro: this.bairro},
-                    {endereco:this.endereco},
-                    {situacao: this.situacao},
-                    {tipo: this.tipo}
+                    {ano: year},
+                    {mes: month},
+                    {numeroProcesso: requestDoc.SERVICO_CODIGO.toString()},
+                    {data: data},
+                    {descricao: requestDoc.SERVICO_DESCRICAO},
+                    {bairro: requestDoc.BAIRRO},
+                    {endereco: requestDoc.LOGRADOURO + ' Nº: ' +requestDoc.NUMERO},
+                    {situacao: requestDoc.SITUACAO},
+                    {tipo: requestDoc.GRUPOSERVICO_DESCRICAO}
                   ]                 
                 }
+              }; 
+
+              return citizenRequest;
+
+    }
+
+    function obterDemandasDeServicosSedec(requestDoc){
+
+              var splitResult = requestDoc.solicitacao_data.toString().split('-');
+              var year = splitResult[0];
+              var mouth = splitResult[1];
+              var day = splitResult[2];
+
+              var dateFormat = year + '-' + mouth + '-' + day + ' 00:00:00';
+              
+              var citizenRequest = {            
+                ano: requestDoc.ano,
+                mes: requestDoc.mes,
+                numeroProcesso: requestDoc.processo_numero.toString(),
+                data: new Date(dateFormat),
+                hora: requestDoc.solicitacao_hora,
+                descricao: requestDoc.solicitacao_descricao,
+                regional: requestDoc.solicitacao_regional,
+                bairro: requestDoc.solicitacao_bairro,
+                localidade: requestDoc.solicitacao_localidade,
+                endereco: requestDoc.solicitacao_endereco,
+                microregiao: requestDoc.solicitacao_microrregiao,
+                plantao: requestDoc.solicitacao_plantao,
+                origemChamado: requestDoc.solicitacao_origem_chamado,
+                loc:{
+                  type: {type: String, default: 'Point'},
+                  coordinates: [requestDoc.latitude, requestDoc.longitude]
+                },
+                vitimas: requestDoc.solicitacao_vitimas,
+                vitimasFatais: requestDoc.solicitacao_vitimas_fatais,
+                situacao: requestDoc.processo_situacao,
+                tipo: requestDoc.processo_tipo,
+                origemProcesso: requestDoc.processo_origem,
+                localizacaoProcesso: requestDoc.processo_localizacao,
+                statusProcesso: requestDoc.processo_status,
+                dataConclusaoProcesso: requestDoc.processo_data_conclusao,
+                query: {
+                  numeroProcesso: requestDoc.processo_numero.toString()
+                }
+
               }; 
 
               return citizenRequest;
