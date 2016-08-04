@@ -30,7 +30,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
       }, function(response){
 
-         console.log(response);
+        //  console.log(response);
 
       });
 
