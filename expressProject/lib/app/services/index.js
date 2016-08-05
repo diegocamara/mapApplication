@@ -1,4 +1,5 @@
 var jsonLoader = require('./jsonloader');
+var models = require('../models');
 
 module.exports = {
 
@@ -6,14 +7,14 @@ module.exports = {
       return obterJsonLoaderDemandasRecife();
     },
         
-    verificarNovosDados: function(callback){
+    verificarNovosDados: function(callback, ioCallBack){
 
       var demandas = [
-        {
-          nome: 'Demandas de serviços 156',
-          urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
-          getRequest: obterDemandasDeServicos156
-        },
+        // {
+        //   nome: 'Demandas de serviços 156',
+        //   urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
+        //   getRequest: obterDemandasDeServicos156
+        // },
         { 
           nome: 'Demandas com localização',
           urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c',
@@ -26,46 +27,68 @@ module.exports = {
           getRequest: obterDemandasDeServicosSedec
         }        
       ];      
-                 
-      var Agenda = require('agenda');
 
-      var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
-
-      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
-
-      agenda.define('job', 
-                    {priority: 'highest',
-                    concurrency: 1,
-                    lockLimit: 0,
-                    lockLifetime: 0}, 
-                    function(job, done){
-
-        console.log('Verificando novos dados em ' + new Date() + '... ');   
-
-        try{         
-
-          verificarDemandas(demandas, 0, function(){
-            done();
-            console.log('All done.');
+      verificarDemandas(demandas, 0, function(){           
+            console.log('All done.');      
+            ioCallBack();
           });
+                 
+      // var Agenda = require('agenda');
 
-        }catch(err){
-           console.err(err);
-           done();
-        }       
+      // var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
-      });      
+      // var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
 
-      agenda.on('ready', function(){
+      // agenda.define('job', 
+      //               {priority: 'highest',
+      //               concurrency: 1,
+      //               lockLimit: 0,
+      //               lockLifetime: 0}, 
+      //               function(job, done){
 
-        agenda.every('15 minutes', 'job');
+      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
 
-        agenda.start();
-        console.log('Agenda starting...');
+      //   try{         
 
-      });    
+      //     verificarDemandas(demandas, 0, function(){
+      //       done();
+      //       console.log('All done.');
+      //       io.broadcast.emit('Test');
+      //     });
 
-      agenda.on('error', function(){
+      //   }catch(err){
+      //      console.err(err);
+      //      done();
+      //   }       
+
+      // });      
+
+      // agenda.on('ready', function(){
+
+      //   agenda.every('15 minutes', 'job');
+
+      //   agenda.start();
+      //   console.log('Agenda starting...');
+
+      // });    
+
+      // agenda.on('error', function(){
+
+      // });
+
+    },
+
+    getLastRequests: function(callback){
+
+      var CitizenRequest = new models.CitizenRequest();
+
+      CitizenRequest.collection.find({}).sort({data: -1}).limit(5).toArray(function(error, result){
+
+        if(error){
+          throw error;
+        }
+
+        callback(result);
 
       });
 
@@ -87,7 +110,7 @@ module.exports = {
 
           jsonLoader.getJsonFromWeb(url, function(json){
             
-            var models = require('../models');
+            
             var citizenRequests = [];
 
             for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){              

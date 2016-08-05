@@ -43,7 +43,14 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 .controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 
              function($scope, $timeout, $mdSidenav, CitizenRequestService) {              
    
-   var dataAtual = new Date();
+  $scope.citizenRequests = []; 
+
+  socket.on('requests update', function(requests){
+   console.log(requests);
+   $scope.citizenRequests = requests; 
+  });
+
+  var dataAtual = new Date();
   
   $scope.filter = {
     initialDate: dataAtual,
@@ -54,7 +61,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   $scope.minDate = $scope.filter.initialDate;
 
-  $scope.citizenRequests = []; 
+  
 
   $scope.changeInitialDate = function(){
     $scope.minDate = $scope.filter.initialDate;
@@ -87,18 +94,17 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
     if(citizenRequests && citizenRequests.length > 0){     
      
-      var markers = [];
-      $scope.citizenRequests = [];
+      var markers = [];     
 
       for(var citizenRequestIndex = 0; citizenRequestIndex < citizenRequests.length; citizenRequestIndex++){         
 
         var citizenRequest = citizenRequests[citizenRequestIndex];
 
-        if(citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== ''){
+        if(citizenRequest.loc && citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== ''){
 
         var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
         var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
-        $scope.citizenRequests.push(citizenRequests[citizenRequestIndex]);
+        
         // console.log(citizenRequests[citizenRequestIndex]);       
 
         var marker = L.marker([latitude, longitude], {icon: blueMarker})
