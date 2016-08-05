@@ -27,54 +27,49 @@ module.exports = {
           getRequest: obterDemandasDeServicosSedec
         }        
       ];      
+                      
+      var Agenda = require('agenda');
 
-      verificarDemandas(demandas, 0, function(){           
-            console.log('All done.');      
+      var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
+
+      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
+
+      agenda.define('job', 
+                    {priority: 'highest',
+                    concurrency: 1,
+                    lockLimit: 0,
+                    lockLifetime: 0}, 
+                    function(job, done){
+
+        console.log('Verificando novos dados em ' + new Date() + '... ');   
+
+        try{         
+
+          verificarDemandas(demandas, 0, function(){
+            done();
+            console.log('All done.');
             ioCallBack();
           });
-                 
-      // var Agenda = require('agenda');
 
-      // var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
+        }catch(err){
+           console.err(err);
+           done();
+        }       
 
-      // var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
+      });      
 
-      // agenda.define('job', 
-      //               {priority: 'highest',
-      //               concurrency: 1,
-      //               lockLimit: 0,
-      //               lockLifetime: 0}, 
-      //               function(job, done){
+      agenda.on('ready', function(){
 
-      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
+        agenda.every('15 minutes', 'job');
 
-      //   try{         
+        agenda.start();
+        console.log('Agenda starting...');
 
-      //     verificarDemandas(demandas, 0, function(){
-      //       done();
-      //       console.log('All done.');
-      //       io.broadcast.emit('Test');
-      //     });
+      });    
 
-      //   }catch(err){
-      //      console.err(err);
-      //      done();
-      //   }       
+      agenda.on('error', function(){
 
-      // });      
-
-      // agenda.on('ready', function(){
-
-      //   agenda.every('15 minutes', 'job');
-
-      //   agenda.start();
-      //   console.log('Agenda starting...');
-
-      // });    
-
-      // agenda.on('error', function(){
-
-      // });
+      });
 
     },
 
