@@ -10,22 +10,22 @@ module.exports = {
     verificarNovosDados: function(callback, ioCallBack){
 
       var demandas = [
-        // {
-        //   nome: 'Demandas de serviços 156',
-        //   urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
-        //   getRequest: obterDemandasDeServicos156
-        // },
         { 
           nome: 'Demandas com localização',
           urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/079fd017-dfa3-4e69-9198-72fcb4b2f01c',
           getRequest: obterComLatitudeLongitude
         }
-        ,
-        { 
-          nome: 'Demandas Sedec Solicitações em Tempo Real',
-          urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/7723d193-c6d5-4859-933b-e8386e008b7e',
-          getRequest: obterDemandasDeServicosSedec
-        }        
+        // {
+        //   nome: 'Demandas de serviços 156',
+        //   urlDemandaRecife: urlDemandasRecife = 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/9afa68cf-7fd9-4735-b157-e23da873fef7',
+        //   getRequest: obterDemandasDeServicos156
+        // },        
+        // ,
+        // { 
+        //   nome: 'Demandas Sedec Solicitações em Tempo Real',
+        //   urlDemandaRecife: 'http://dados.recife.pe.gov.br/dataset/demandas-dos-cidadaos-e-servicos-dados-vivos-recife/resource/7723d193-c6d5-4859-933b-e8386e008b7e',
+        //   getRequest: obterDemandasDeServicosSedec
+        // }        
       ];      
                       
       var Agenda = require('agenda');
