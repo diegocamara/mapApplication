@@ -40,13 +40,37 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
 })
 
-.controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 
-             function($scope, $timeout, $mdSidenav, CitizenRequestService) {              
+.factory('LocationGeoJsonService', function($http){
+
+  var webServiceUrl = 'http://localhost:3000/';
+
+  var geoJsonUrl = webServiceUrl + 'getrecifegeojsonareas';
+
+  return {
+
+    getRecifeGeoJsonAreas: function(){
+
+      return $http.get(geoJsonUrl)
+      .then(function(response){        
+
+        return response.data;
+
+      }, function(){
+
+      });
+
+    }
+
+  }
+
+})
+
+.controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 'LocationGeoJsonService',
+             function($scope, $timeout, $mdSidenav, CitizenRequestService, LocationGeoJsonService) {              
    
   $scope.citizenRequests = []; 
 
-  socket.on('requests update', function(requests){
-   console.log(requests);
+  socket.on('requests update', function(requests){   
    $scope.citizenRequests = requests; 
   });
 
@@ -79,14 +103,14 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
       maxZoom: 18,
   }).addTo(leafletMap);
 
-  L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+  L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';  
 
   var requestsLayer;   
 
   var blueMarker = L.AwesomeMarkers.icon({
           icon: 'fa-exclamation-triangle animated infinite pulse',
           markerColor: 'orange'
-        });
+        });        
 
   $scope.getCitizenRequests = function(){
 
@@ -130,6 +154,26 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
     });
 
+    LocationGeoJsonService.getRecifeGeoJsonAreas().then(function(geojson){
+              
+          var featureStyle = {
+            "weight": 1,
+            "opacity": 0.65
+          }
+
+          var rpasLayers = L.geoJson(geojson.features, {
+            style: featureStyle,
+            onEachFeature: onEachFeature
+          }); 
+
+          var rpas = {
+            "Bairros": rpasLayers
+          }
+         
+          L.control.layers(null, rpas).addTo(leafletMap);
+
+        });
+
   }
 
   $timeout(function() {
@@ -170,3 +214,37 @@ function getConsultDate(date){
 
     return new Date(dateFormat);
   }
+
+function onEachFeature(feature, layer){
+
+  if(feature.properties){    
+    layer.bindPopup(feature.properties.bairro_nome);
+  }
+
+}
+
+function getColor(d) {
+    return d > 1000 ? '#800026' :
+           d > 500  ? '#BD0026' :
+           d > 200  ? '#E31A1C' :
+           d > 100  ? '#FC4E2A' :
+           d > 50   ? '#FD8D3C' :
+           d > 20   ? '#FEB24C' :
+           d > 10   ? '#FED976' :
+                      '#FFEDA0';
+}
+
+function style(feature){
+
+  var style = {
+    fillColor: getColor(),
+    weight: 2,
+    opacity: 0.65,
+    color: 'white',
+    dashArray: '3',
+    fillOpacity: 0.7
+  }
+
+  return style;
+
+}

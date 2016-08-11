@@ -21,31 +21,19 @@ exports.getCitizenRequests = function(req, res){
 
 }
 
-exports.insertUserPost = function(req, res){
+exports.getRecifeGeoJsonAreas = function(req, res){
 
-  var categoria = req.body.categoria;
-  var comentarios = req.body.comentarios;
-  var severidade = req.body.severidade;
-  var latitude = req.body.latitude;
-  var longitude = req.body.longitude;
-  var facebookId = req.body.facebookId;
+  var geoJsonUrl = 'http://dados.recife.pe.gov.br/storage/f/2013-07-15T15%3A17%3A15.285Z/bairros.geojson';
 
-  var alerta = new models.Alerta({
-    categoria: categoria,
-    comentarios: comentarios,
-    severidade: severidade,
-    latitude: latitude,
-    longitude: longitude,
-    facebookId: facebookId
-  });
+  var request = require('request');
 
-  alerta.save(function(err, alerta){
+  request.get(geoJsonUrl, function(error, response, body){
 
-    if(err){
+    if(error){
       throw err;
-    }
-
-    res.send(alerta);
+    }    
+        
+    res.send(body);
 
   });
 
