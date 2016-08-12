@@ -94,6 +94,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   $scope.toggleLeft = buildToggler('left');
   $scope.close = close('left');
 
+  var geoJsonRecife;   
+
   var leafletMap = L.map('map').setView([-8.0564394, -34.9221501], 12);    
 
   leafletMap.zoomControl.setPosition('topright');
@@ -112,6 +114,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
           markerColor: 'orange'
         });        
 
+  var lcontrol;  
+
   $scope.getCitizenRequests = function(){
 
     CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
@@ -129,6 +133,9 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
         var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
         
+        citizenRequest.loc.coordinates[0] = latitude;
+        citizenRequest.loc.coordinates[1] = longitude;
+
         // console.log(citizenRequests[citizenRequestIndex]);       
 
         var marker = L.marker([latitude, longitude], {icon: blueMarker})
@@ -138,7 +145,9 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
         }
         
-      }                        
+      }        
+
+      updateMap(geoJsonRecife, leafletMap, citizenRequests);
 
     }
 
@@ -152,35 +161,64 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
       leafletMap.invalidateSize(true); 
 
-    });
-
-    LocationGeoJsonService.getRecifeGeoJsonAreas().then(function(geojson){
-              
-          var featureStyle = {
-            "weight": 1,
-            "opacity": 0.65
-          }
-
-          var rpasLayers = L.geoJson(geojson.features, {
-            style: featureStyle,
-            onEachFeature: onEachFeature
-          }); 
-
-          var rpas = {
-            "Bairros": rpasLayers
-          }
-         
-          L.control.layers(null, rpas).addTo(leafletMap);
-
-        });
+    });             
 
   }
 
   $timeout(function() {
     leafletMap.invalidateSize();
-    $scope.getCitizenRequests();
+
+    LocationGeoJsonService.getRecifeGeoJsonAreas().then(function(geojson){     
+     geoJsonRecife = geojson;     
+     $scope.getCitizenRequests();     
+   });
+
+    
   }, 10);
 
+  function updateMap(geojson, map, citizenRequests){
+
+          var featureStyle = {
+            "weight": 1,
+            "opacity": 0.65
+          }
+
+          for(var featureIndex = 0; featureIndex < geojson.features.length; featureIndex++){
+            geojson.features[featureIndex].properties.alertas = getAlertsNumber(geojson.features[featureIndex].geometry.coordinates, citizenRequests);            
+          }
+
+          var rpasLayers = L.geoJson(geojson.features, {
+            style: style,
+            onEachFeature: onEachFeature
+          }); 
+          
+          var rpas = {
+            "Bairros": rpasLayers
+          }
+
+          if(lcontrol){           
+            lcontrol.removeFrom(map);            
+          }
+
+          lcontrol = L.control.layers(null, rpas).addTo(map);
+
+  }
+
+  function getAlertsNumber(polygon, citizenRequests){
+
+      var alerts = 0;
+
+      for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){
+        
+        if(inside(citizenRequests[requestIndex].loc.coordinates, polygon)){          
+          alerts++;
+        }
+        
+      }
+
+      return alerts;
+
+  }
 
   function buildToggler(navId){
     return function(){
@@ -223,6 +261,7 @@ function onEachFeature(feature, layer){
 
 }
 
+
 function getColor(d) {
     return d > 1000 ? '#800026' :
            d > 500  ? '#BD0026' :
@@ -237,7 +276,7 @@ function getColor(d) {
 function style(feature){
 
   var style = {
-    fillColor: getColor(),
+    fillColor: getColor(510),
     weight: 2,
     opacity: 0.65,
     color: 'white',
@@ -248,3 +287,22 @@ function style(feature){
   return style;
 
 }
+
+function inside(point, vs) {
+    // ray-casting algorithm based on
+    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    
+    var x = point[0], y = point[1];
+    
+    var inside = false;
+    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        var xi = vs[i][0], yi = vs[i][1];
+        var xj = vs[j][0], yj = vs[j][1];
+        
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    
+    return inside;
+};
