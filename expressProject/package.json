@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "agenda": "^0.8.1",
-    "batchflow": "^0.4.0"
+    "batchflow": "^0.4.0",
+    "csvtojson": "^1.0.0",
+    "request": "^2.74.0"
   }
 }
