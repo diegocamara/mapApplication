@@ -70,6 +70,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
    
   $scope.citizenRequests = []; 
 
+  $scope.isLoading = true;
+
   socket.on('requests update', function(requests){   
    $scope.citizenRequests = requests; 
   });
@@ -109,7 +111,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   var requestsLayer;   
 
-  var blueMarker = L.AwesomeMarkers.icon({
+  var orangeMarker = L.AwesomeMarkers.icon({
           icon: 'fa-exclamation-triangle animated infinite pulse',
           markerColor: 'orange'
         });        
@@ -119,7 +121,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
   $scope.getCitizenRequests = function(){
 
     CitizenRequestService.getCitizenRequests($scope.filter).then(function(citizenRequests){
-
+   
     if(citizenRequests && citizenRequests.length > 0){     
      
       var markers = [];     
@@ -129,16 +131,13 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         var citizenRequest = citizenRequests[citizenRequestIndex];
 
         if(citizenRequest.loc && citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== ''){
-
-        var latitude = Number(citizenRequest.loc.coordinates[0].toString().replace(',','.'));
-        var longitude = Number(citizenRequest.loc.coordinates[1].toString().replace(',','.'));
-        
-        citizenRequest.loc.coordinates[0] = latitude;
-        citizenRequest.loc.coordinates[1] = longitude;
-
+                
         // console.log(citizenRequests[citizenRequestIndex]);       
 
-        var marker = L.marker([latitude, longitude], {icon: blueMarker})
+        var longitude = citizenRequest.loc.coordinates[0];
+        var latitude = citizenRequest.loc.coordinates[1];
+
+        var marker = L.marker([latitude, longitude], {icon: orangeMarker})
         .bindPopup(citizenRequests[citizenRequestIndex].descricao);
 
         markers.push(marker);
@@ -147,17 +146,19 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
         
       }        
 
-      updateMap(geoJsonRecife, leafletMap, citizenRequests);
-
-    }
-
-    if(requestsLayer){
+      if(requestsLayer){
         leafletMap.removeLayer(requestsLayer);
       }
       
-      requestsLayer = L.layerGroup(markers);          
+      requestsLayer = L.layerGroup(markers);  
+       
       requestsLayer.addTo(leafletMap);
 
+      updateMap(geoJsonRecife, leafletMap, citizenRequests);
+      
+    }
+
+      $scope.isLoading = false;
 
       leafletMap.invalidateSize(true); 
 
@@ -184,7 +185,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
           }
 
           for(var featureIndex = 0; featureIndex < geojson.features.length; featureIndex++){
-            geojson.features[featureIndex].properties.alertas = getAlertsNumber(geojson.features[featureIndex].geometry.coordinates, citizenRequests);            
+            geojson.features[featureIndex].properties.alertas = getAlertsNumber(geojson.features[featureIndex].properties.bairro_nome_ca, citizenRequests);            
           }
 
           var rpasLayers = L.geoJson(geojson.features, {
@@ -204,15 +205,14 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   }
 
-  function getAlertsNumber(polygon, citizenRequests){
+  function getAlertsNumber(bairro, citizenRequests){
 
       var alerts = 0;
 
-      for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){
-       
-          // console.log(citizenRequests[requestIndex].loc.coordinates);         
-        if(inside(citizenRequests[requestIndex].loc.coordinates, polygon[0])){ 
-          alerts++;
+      for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){       
+               
+        if(bairro === citizenRequests[requestIndex].bairro_coords){          
+          alerts += 2;
         }
         
       }
@@ -264,20 +264,20 @@ function onEachFeature(feature, layer){
 
 
 function getColor(d) {
-    return d > 1000 ? '#800026' :
-           d > 500  ? '#BD0026' :
-           d > 200  ? '#E31A1C' :
-           d > 100  ? '#FC4E2A' :
-           d > 50   ? '#FD8D3C' :
-           d > 20   ? '#FEB24C' :
-           d > 10   ? '#FED976' :
-                      '#FFEDA0';
+    return d > 128 ? '#800026' :
+           d > 64  ? '#BD0026' :
+           d > 32  ? '#E31A1C' :
+           d > 16  ? '#FC4E2A' :
+           d > 8   ? '#FD8D3C' :
+           d > 4   ? '#FEB24C' :
+           d > 2   ? '#FED976' :
+                     '#4CB2D4';
 }
 
 function style(feature){
 
   var style = {
-    fillColor: getColor(510),
+    fillColor: getColor(feature.properties.alertas),
     weight: 2,
     opacity: 0.65,
     color: 'white',
@@ -288,23 +288,3 @@ function style(feature){
   return style;
 
 }
-
-function inside(point, vs) {
-    // ray-casting algorithm based on
-    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-   
-    var x = point[0], y = point[1];
-    
-    var inside = false;
-    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        var xi = vs[i][0], yi = vs[i][1];
-        var xj = vs[j][0], yj = vs[j][1];
-        console.log(intersect);
-        var intersect = ((yi > y) != (yj > y))
-            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-           
-        if (intersect) inside = !inside;
-    }
-    
-    return inside;
-};

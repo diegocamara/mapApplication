@@ -15,7 +15,7 @@ var schema = new Schema({
   microregiao: {type: String},
   plantao: {type: String},
   origemChamado: {type: String},
-  loc:{
+  loc: {
     type: {type: String, default: 'Point'},
     coordinates: []
   },
@@ -26,7 +26,8 @@ var schema = new Schema({
   origemProcesso: {type: String},
   localizacaoProcesso: {type: String},
   statusProcesso: {type: String},
-  dataConclusaoProcesso: {type: String}
+  dataConclusaoProcesso: {type: String},
+  bairro_coords: {type: String}
 });
 
 module.exports = mongoose.model('CitizenRequest', schema);

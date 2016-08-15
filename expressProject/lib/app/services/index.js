@@ -27,49 +27,53 @@ module.exports = {
         //   getRequest: obterDemandasDeServicosSedec
         // }        
       ];      
-                      
+
+       verificarDemandas(demandas, 0, function(){           
+            console.log('All done.');            
+       });
+
       var Agenda = require('agenda');
 
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
-      var agenda = new Agenda({priority:'high', db: {address: mongoConnectionString}});
+      var agenda = new Agenda({db: {address: mongoConnectionString}});
 
-      agenda.define('job', 
-                    {priority: 'highest',
-                    concurrency: 1,
-                    lockLimit: 0,
-                    lockLifetime: 0}, 
-                    function(job, done){
+      // agenda.define('job', 
+      //               {priority: 'highest',
+      //               concurrency: 1,
+      //               lockLimit: 0,
+      //               lockLifetime: 0}, 
+      //               function(job, done){
 
-        console.log('Verificando novos dados em ' + new Date() + '... ');   
+      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
 
-        try{         
+      //   try{         
 
-          verificarDemandas(demandas, 0, function(){
-            done();
-            console.log('All done.');
-            ioCallBack();
-          });
+      //     verificarDemandas(demandas, 0, function(){
+      //       done();
+      //       console.log('All done.');
+      //       ioCallBack();
+      //     });
 
-        }catch(err){
-           console.err(err);
-           done();
-        }       
+      //   }catch(err){
+      //      console.err(err);
+      //      done();
+      //   }       
 
-      });      
+      // });      
 
-      agenda.on('ready', function(){
+      // agenda.on('ready', function(){
 
-        agenda.every('15 minutes', 'job');
+      //   agenda.every('15 minutes', 'job');
 
-        agenda.start();
-        console.log('Agenda starting...');
+      //   agenda.start();
+      //   console.log('Agenda starting...');
 
-      });    
+      // });    
 
-      agenda.on('error', function(){
+      // agenda.on('error', function(){
 
-      });
+      // });
 
     },
 
@@ -90,6 +94,26 @@ module.exports = {
     }
 
 }
+
+  function getRecifeGeojson(callback){
+
+    var geoJsonUrl = 'http://dados.recife.pe.gov.br/storage/f/2013-07-15T15%3A17%3A15.285Z/bairros.geojson';
+
+    var request = require('request');
+
+    request.get(geoJsonUrl, function(error, response, body){
+
+      if(error){
+        throw err;
+      }    
+
+      if(callback){
+        callback(body);
+      }
+
+    });
+
+  }
 
  
   function getCitizenRequest(htmlUrlToRequestData, getRequest, callback){
@@ -142,7 +166,7 @@ module.exports = {
           var query = citizenRequests[index].query;
 
           delete citizenRequests[index]['query'];         
-
+          
           CitizenRequest.collection.update(query, citizenRequests[index], function(err, result){
           
             if(err){
@@ -188,36 +212,45 @@ module.exports = {
 
         }        
 
-      }      
+      }
+      
 
-      if(citizenRequestInsertList.length > 0){
-          insertCitizenRequests(citizenRequestInsertList, CitizenRequest, function(){
+        if(citizenRequestInsertList.length > 0){
+            insertCitizenRequests(citizenRequestInsertList, CitizenRequest, function(){
 
-            if(callback){
-               callback();
+              if(callback){
+                callback();
+              }
+
+          }); 
+        }else if(citizenRequests.length > 0 && updateRequests.length == 0){
+
+            for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){
+              delete citizenRequests[requestIndex]['query'];             
             }
 
-        }); 
-      }else if(citizenRequests.length > 0 && updateRequests.length == 0){
+            insertCitizenRequests(citizenRequests, CitizenRequest, function(){
+            
+              if(callback){
+                callback();
+              }
 
-          for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){
-            delete citizenRequests[requestIndex]['query'];             
-          }
+          }); 
+        }else{
+            
+              if(callback){
+                callback();
+              }
 
-          insertCitizenRequests(citizenRequests, CitizenRequest, function(){
-          
-             if(callback){
-               callback();
-             }
+        } 
 
-        }); 
-      }else{
-          
-            if(callback){
-               callback();
-            }
 
-      }         
+        
+
+
+
+
+
 
     }  
 
@@ -225,19 +258,32 @@ module.exports = {
 
   function insertCitizenRequests(citizenRequests, CitizenRequest, callback){
    
-    if(citizenRequests !== undefined && citizenRequests.length > 0){
+     getRecifeGeojson(function(geojson){       
 
-      CitizenRequest.collection.insert(citizenRequests, function(err, docs){
+        if(citizenRequests !== undefined && citizenRequests.length > 0){
 
-        if(err){
-          throw err;
+          CitizenRequest.collection.insert(citizenRequests, function(err, docs){
+
+            if(err){
+              throw err;
+            }
+
+            console.log(docs.insertedCount  + ' Documents inserted.');
+
+            var gjson = JSON.parse(geojson);
+
+            checkCoords(0, gjson, function(){
+               console.log('All areas checked.');
+               callback();
+            });
+           
+          });
+
         }
 
-        console.log(docs.insertedCount  + ' Documents inserted.');
-        callback();
-      });
+     });
 
-    }
+   
 
   }
 
@@ -331,9 +377,9 @@ module.exports = {
                 microregiao: requestDoc.solicitacao_microrregiao,
                 plantao: requestDoc.solicitacao_plantao,
                 origemChamado: requestDoc.solicitacao_origem_chamado,
-                loc:{
-                  type: {type: String, default: 'Point'},
-                  coordinates: [requestDoc.latitude, requestDoc.longitude]
+                loc: {
+                  type: 'Point',
+                  coordinates: [Number(requestDoc.longitude.replace(',', '.')), Number(requestDoc.latitude.replace(',', '.'))]
                 },
                 vitimas: requestDoc.solicitacao_vitimas,
                 vitimasFatais: requestDoc.solicitacao_vitimas_fatais,
@@ -343,6 +389,7 @@ module.exports = {
                 localizacaoProcesso: requestDoc.processo_localizacao,
                 statusProcesso: requestDoc.processo_status,
                 dataConclusaoProcesso: requestDoc.processo_data_conclusao,
+                bairro_coords: requestDoc.bairro_coords,
                 query: {
                   numeroProcesso: requestDoc.processo_numero.toString()
                 }
@@ -436,3 +483,75 @@ module.exports = {
               return citizenRequest;
 
     }
+
+
+    function checkCoords(index, gjson, callback) {
+
+      var CitizenRequest = new models.CitizenRequest();  
+      
+      if (index < gjson.features.length) {
+        console.log('Checking requests for area: ' + gjson.features[index].properties.bairro_nome_ca + '        at ' + new Date());
+        CitizenRequest.collection.find({
+          loc: {
+            $geoIntersects: {
+              $geometry: {
+                type: "Polygon",
+                coordinates: gjson.features[index].geometry.coordinates
+              }
+            }
+          }
+        }).toArray(function (error, result) {
+
+          if (error) {
+
+            checkCoords(++index, gjson, callback);            
+
+          }else{
+
+            updateResult(0, index, result, gjson, function () {
+
+              checkCoords(++index, gjson, callback);
+
+            });
+
+          }
+
+        });
+
+      } else {
+
+        callback();
+
+      }
+
+    }
+
+
+    function updateResult(indexResquest, indexArea, resultArray, gjson, callback) {
+
+      if (resultArray.length > 0 && indexResquest < resultArray.length) {
+
+        var CitizenRequest = new models.CitizenRequest();
+
+        CitizenRequest.collection.update({ _id: resultArray[indexResquest]._id },
+          {
+            $set: { bairro_coords: gjson.features[indexArea].properties.bairro_nome_ca }
+          }, function (error, doc) {
+
+            if (error) {             
+              throw error;
+            }
+
+            console.log(' * Process number: ' + doc.numeroProcesso + ' updated.');
+            
+            updateResult(++indexResquest,indexArea, gjson, resultArray, callback);
+
+          });
+
+      } else {
+        callback();
+      }
+
+    }
+
+    
