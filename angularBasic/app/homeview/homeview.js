@@ -68,15 +68,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 .controller('homeviewController', ['$scope', '$timeout', '$mdSidenav', 'CitizenRequestService', 'LocationGeoJsonService',
              function($scope, $timeout, $mdSidenav, CitizenRequestService, LocationGeoJsonService) {              
    
-  $scope.citizenRequests = []; 
-
-  $scope.isLoading = true;
-
-  socket.on('requests update', function(requests){   
-   $scope.citizenRequests = requests; 
-  });
-
   var dataAtual = new Date();
+  dataAtual = getConsultDate(dataAtual);
   
   $scope.filter = {
     initialDate: dataAtual,
@@ -87,11 +80,63 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   $scope.minDate = $scope.filter.initialDate;
 
+  $scope.citizenRequests = []; 
+
+  $scope.isLoading = true;
+
+  function socketAction(){
+
+    socket.on('requests update', function (requests) {
+    $scope.citizenRequests = requests;
+    
+    if (requests.length > 0) {
+
+      var filterRequests = [];
+
+      requests.forEach(function (element, index, array) {
+         
+         var elementDate = new Date(element.data);
+
+        if (elementDate >= $scope.filter.initialDate
+          && elementDate <= $scope.filter.finalDate) {
+            
+          filterRequests.push(element);
+
+        }
+
+      });
+
+
+      if ($scope.citizenRequests.length > 0 && filterRequests.length > 0) {
+
+        filterRequests.forEach(function (streamElement, streamIndex, streamArray) {
+          
+          if (!isContainsElement(streamElement, $scope.citizenRequests)) {
+            
+            $scope.citizenRequests.push(streamElement);
+          }
+
+
+        });
+
+      }
+
+    }
+
+  });
+
+  }  
   
 
-  $scope.changeInitialDate = function(){
+  $scope.changeInitialDate = function(){    
     $scope.minDate = $scope.filter.initialDate;
+    $scope.ajustDate();
   } 
+
+  $scope.ajustDate = function(){
+    $scope.filter.initialDate = getConsultDate($scope.filter.initialDate);
+    $scope.filter.finalDate = getConsultDate($scope.filter.finalDate);
+  }
 
   $scope.toggleLeft = buildToggler('left');
   $scope.close = close('left');
@@ -130,6 +175,8 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
         var citizenRequest = citizenRequests[citizenRequestIndex];
 
+        $scope.citizenRequests.push(citizenRequest);
+
         if(citizenRequest.loc && citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== ''){
                 
         // console.log(citizenRequests[citizenRequestIndex]);       
@@ -158,9 +205,10 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
       
     }
 
+      socketAction();
       $scope.isLoading = false;
-
       leafletMap.invalidateSize(true); 
+
 
     });             
 
@@ -205,6 +253,20 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   }
 
+  function isContainsElement(streamElement, scopeElementsArray){
+
+     scopeElementsArray.forEach(function (scopeElement, scopeElementIndex, scopeElementsArray) {
+
+           if(streamElement._id === scopeElement._id){
+            return true;
+           }
+
+         });
+
+    return false;
+
+  }
+
   function getAlertsNumber(bairro, citizenRequests){
 
       var alerts = 0;
@@ -212,7 +274,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
       for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){       
                
         if(bairro === citizenRequests[requestIndex].bairro_coords){          
-          alerts += 2;
+          ++alerts;
         }
         
       }
@@ -263,14 +325,14 @@ function onEachFeature(feature, layer){
 }
 
 
-function getColor(d) {
-    return d > 128 ? '#800026' :
-           d > 64  ? '#BD0026' :
-           d > 32  ? '#E31A1C' :
-           d > 16  ? '#FC4E2A' :
-           d > 8   ? '#FD8D3C' :
-           d > 4   ? '#FEB24C' :
-           d > 2   ? '#FED976' :
+function getColor(d) {  
+    return d > 64 ? '#800026' :
+           d > 32  ? '#BD0026' :
+           d > 16  ? '#E31A1C' :
+           d > 8  ? '#FC4E2A' :
+           d > 4   ? '#FD8D3C' :
+           d > 2   ? '#FEB24C' :
+           d > 0   ? '#FED976' :
                      '#4CB2D4';
 }
 

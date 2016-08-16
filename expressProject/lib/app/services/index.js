@@ -27,53 +27,49 @@ module.exports = {
         //   getRequest: obterDemandasDeServicosSedec
         // }        
       ];      
-
-       verificarDemandas(demandas, 0, function(){           
-            console.log('All done.');            
-       });
-
+              
       var Agenda = require('agenda');
 
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
       var agenda = new Agenda({db: {address: mongoConnectionString}});
 
-      // agenda.define('job', 
-      //               {priority: 'highest',
-      //               concurrency: 1,
-      //               lockLimit: 0,
-      //               lockLifetime: 0}, 
-      //               function(job, done){
+      agenda.define('job', 
+                    {priority: 'highest',
+                    concurrency: 1,
+                    lockLimit: 0,
+                    lockLifetime: 0}, 
+                    function(job, done){
 
-      //   console.log('Verificando novos dados em ' + new Date() + '... ');   
+        console.log('Verificando novos dados em ' + new Date() + '... ');   
 
-      //   try{         
+        try{         
 
-      //     verificarDemandas(demandas, 0, function(){
-      //       done();
-      //       console.log('All done.');
-      //       ioCallBack();
-      //     });
+          verificarDemandas(demandas, 0, function(){
+            done();
+            console.log('All done.');
+            ioCallBack();
+          });
 
-      //   }catch(err){
-      //      console.err(err);
-      //      done();
-      //   }       
+        }catch(err){
+           console.err(err);
+           done();
+        }       
 
-      // });      
+      });      
 
-      // agenda.on('ready', function(){
+      agenda.on('ready', function(){
 
-      //   agenda.every('15 minutes', 'job');
+        agenda.every('15 minutes', 'job');
 
-      //   agenda.start();
-      //   console.log('Agenda starting...');
+        agenda.start();
+        console.log('Agenda starting...');
 
-      // });    
+      });    
 
-      // agenda.on('error', function(){
+      agenda.on('error', function(){
 
-      // });
+      });
 
     },
 
@@ -127,15 +123,14 @@ module.exports = {
           url = urlRequest;
           console.log("Obtendo arquivo .csv de: " + url);       
 
-          jsonLoader.getJsonFromWeb(url, function(json){
-            
+          jsonLoader.getJsonFromWeb(url, function(json){            
             
             var citizenRequests = [];
 
             for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){              
 
               citizenRequest = getRequest(json[citizenRequestIndex]);       
-
+             
               citizenRequests.push(citizenRequest);              
               
             }
@@ -166,14 +161,14 @@ module.exports = {
           var query = citizenRequests[index].query;
 
           delete citizenRequests[index]['query'];         
-          
-          CitizenRequest.collection.update(query, citizenRequests[index], function(err, result){
+                             
+          CitizenRequest.collection.update(query, {$set: {situacao: citizenRequests[index].situacao}}, function(err, result){
           
             if(err){
               throw err;
             }
 
-            console.log('Atualizando processo de numero: ' + citizenRequests[index].numeroProcesso);            
+            console.log('Atualizando situação para o processo de numero: ' + citizenRequests[index].numeroProcesso);            
             updateRequests.push(citizenRequests[index]);
             updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, ++index, callback);                           
 

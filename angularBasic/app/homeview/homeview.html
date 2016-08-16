@@ -51,7 +51,7 @@
                 <div layout="column">
                     <md-datepicker ng-model="filter.initialDate" md-placeholder="Enter date"
                                md-max-date="maxDate" ng-change="changeInitialDate()" ></md-datepicker>
-                    <md-datepicker ng-model="filter.finalDate" md-placeholder="Enter date"
+                    <md-datepicker ng-model="filter.finalDate" ng-change="ajustDate()" md-placeholder="Enter date"
                               md-min-date="minDate" md-max-date="maxDate"></md-datepicker>           
                 </div>                             
             </div>
