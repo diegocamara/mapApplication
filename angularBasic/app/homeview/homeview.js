@@ -108,11 +108,10 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
 
       if ($scope.citizenRequests.length > 0 && filterRequests.length > 0) {
-
+        
         filterRequests.forEach(function (streamElement, streamIndex, streamArray) {
           
-          if (!isContainsElement(streamElement, $scope.citizenRequests)) {
-            
+          if (!isContainsElement(streamElement, $scope.citizenRequests)) {            
             $scope.citizenRequests.push(streamElement);
           }
 
@@ -273,7 +272,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
       for(var requestIndex = 0; requestIndex < citizenRequests.length; requestIndex++){       
                
-        if(bairro === citizenRequests[requestIndex].bairro_coords){          
+        if(bairro === citizenRequests[requestIndex].bairro_coords){
           ++alerts;
         }
         
@@ -325,7 +324,7 @@ function onEachFeature(feature, layer){
 }
 
 
-function getColor(d) {  
+function getColor(d) {
     return d > 64 ? '#800026' :
            d > 32  ? '#BD0026' :
            d > 16  ? '#E31A1C' :

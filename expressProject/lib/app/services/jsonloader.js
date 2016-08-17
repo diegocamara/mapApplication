@@ -10,10 +10,20 @@ JsonLoader.prototype.getJsonFromWeb = function(url, callBack){
   var converter = new Converter({delimiter: ";"});
 
   converter.on('end_parsed', function(jsonArray){
-    callBack(jsonArray);
+    callBack(null, jsonArray);   
   });
 
-  request.get(url).pipe(converter);
+  request.get(url, function(error, response, body){
+
+    if(error){
+      throw error;
+    }
+
+   if(response.statusCode != 200){
+     callBack({error:response.statusCode}, null);
+   }
+
+  }).pipe(converter);
 
 }
 

@@ -27,7 +27,8 @@ module.exports = {
         //   getRequest: obterDemandasDeServicosSedec
         // }        
       ];      
-              
+
+                    
       var Agenda = require('agenda');
 
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
@@ -117,30 +118,37 @@ module.exports = {
       var url;
 
       obterUrlCsvDemandasRecife(htmlUrlToRequestData, function(error, urlRequest){
-
+        
         if(!error){
           
           url = urlRequest;
           console.log("Obtendo arquivo .csv de: " + url);       
 
-          jsonLoader.getJsonFromWeb(url, function(json){            
+          jsonLoader.getJsonFromWeb(url, function(err, json){            
             
-            var citizenRequests = [];
-
-            for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){              
-
-              citizenRequest = getRequest(json[citizenRequestIndex]);       
-             
-              citizenRequests.push(citizenRequest);              
+            if(!err){            
               
-            }
+              var citizenRequests = [];
 
-            var CitizenRequest = models.CitizenRequest;
-            var updateRequests = [];
-            console.log('Atualizando documents...');
-            updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, 0, function(){
-              callback(json);
-            });
+              for(var citizenRequestIndex = 0; citizenRequestIndex < json.length; citizenRequestIndex++){              
+
+                citizenRequest = getRequest(json[citizenRequestIndex]);       
+              
+                citizenRequests.push(citizenRequest);              
+                
+              }
+
+              var CitizenRequest = models.CitizenRequest;
+              var updateRequests = [];
+              console.log('Atualizando documents...');
+              updateCitizenRequests(citizenRequests, CitizenRequest, updateRequests, 0, function(){
+                callback(null, json);
+              });
+
+            }else{
+              console.log('Não foi possivel obter o arquivo json.');
+              callback(err, null);
+            }
 
           });
 
@@ -334,16 +342,21 @@ module.exports = {
 
     function verificarDemandas(demandas, index, callback){
 
-      if(demandas && demandas.length > 0 && (index < demandas.length)){
+      if (demandas && demandas.length > 0 && (index < demandas.length)) {
 
         var demanda = demandas[index];
 
-        getCitizenRequest(demanda.urlDemandaRecife, demanda.getRequest, function(json){
-           console.log('Bath ' + demanda.nome + ' finalizado em ' + new Date() + '.');
-           verificarDemandas(demandas, ++index, callback);
+        getCitizenRequest(demanda.urlDemandaRecife, demanda.getRequest, function (err, json) {
+
+          if (err) {
+            index = demandas.length;
+          }
+          console.log('Bath ' + demanda.nome + ' finalizado em ' + new Date() + '.');
+          verificarDemandas(demandas, ++index, callback);
+
         });
 
-      }else{
+      } else {
         callback();
       }
 
