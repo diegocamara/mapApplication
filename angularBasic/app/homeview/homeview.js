@@ -243,12 +243,23 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
           var rpas = {
             "Bairros": rpasLayers
           }
+          
+          if(lcontrol){
 
-          if(lcontrol){           
-            lcontrol.removeFrom(map);            
+            map.eachLayer(function(layer){
+              if(layer.feature && layer.feature.geometry && layer.feature.geometry.type === 'Polygon'){                
+                map.removeLayer(layer);
+              }
+            });
+
+            //map.removeControl(lcontrol);
+            //lcontrol.removeFrom(map);
+            //map.removeLayer(rpasLayers);
+
+          }else{
+            lcontrol = L.control.layers(null, rpas).addTo(map);
           }
 
-          lcontrol = L.control.layers(null, rpas).addTo(map);
 
   }
 

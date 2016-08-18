@@ -34,7 +34,7 @@ module.exports = {
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
       var agenda = new Agenda({db: {address: mongoConnectionString}});
-
+     
       agenda.define('job', 
                     {priority: 'highest',
                     concurrency: 1,
@@ -152,6 +152,9 @@ module.exports = {
 
           });
 
+        }else{
+            console.log('Outra tentativa em instantes.');
+            callback(error, null);
         }
 
     }); 
@@ -275,7 +278,7 @@ module.exports = {
 
             var gjson = JSON.parse(geojson);
 
-            checkCoords(0, gjson, function(){
+            checkCoords(0, gjson, docs, function(){
                console.log('All areas checked.');
                callback();
             });
@@ -349,7 +352,7 @@ module.exports = {
         getCitizenRequest(demanda.urlDemandaRecife, demanda.getRequest, function (err, json) {
 
           if (err) {
-            index = demandas.length;
+            index = demandas.length;            
           }
           console.log('Bath ' + demanda.nome + ' finalizado em ' + new Date() + '.');
           verificarDemandas(demandas, ++index, callback);
@@ -493,9 +496,13 @@ module.exports = {
     }
 
 
-    function checkCoords(index, gjson, callback) {
+    function checkCoords(index, gjson, docs, callback) {
 
-      var CitizenRequest = new models.CitizenRequest();  
+      var CitizenRequest = new models.CitizenRequest();    
+
+      var requestsIds = getRequestsId(docs.ops);
+
+      var ObjectId = require('mongoose').Types.ObjectId;
       
       if (index < gjson.features.length) {
         console.log('Checking requests for area: ' + gjson.features[index].properties.bairro_nome_ca + '        at ' + new Date());
@@ -507,18 +514,19 @@ module.exports = {
                 coordinates: gjson.features[index].geometry.coordinates
               }
             }
-          }
-        }).toArray(function (error, result) {
-
+          },
+          _id:{$in:requestsIds}          
+        }).toArray(function (error, result) {         
+          
           if (error) {
 
-            checkCoords(++index, gjson, callback);            
+            checkCoords(++index, gjson, docs, callback);            
 
           }else{
 
             updateResult(0, index, result, gjson, function () {
 
-              checkCoords(++index, gjson, callback);
+              checkCoords(++index, gjson, docs, callback);
 
             });
 
@@ -531,6 +539,22 @@ module.exports = {
         callback();
 
       }
+
+    }
+
+    function getRequestsId(elements){
+      
+      var ids = [];            
+
+      if(elements.length > 0){
+
+        elements.forEach(function(element, index, arrayElements){
+          ids.push(element._id);
+        });
+
+      }
+
+      return ids;
 
     }
 
