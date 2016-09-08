@@ -34,12 +34,11 @@ module.exports = {
       var mongoConnectionString = "mongodb://admin:admin12345@ds031925.mlab.com:31925/realtimerequestdb";
 
       var agenda = new Agenda({db: {address: mongoConnectionString}});
-     
-      agenda.define('job', 
-                    {priority: 'highest',
-                    concurrency: 1,
-                    lockLimit: 0,
-                    lockLifetime: 0}, 
+      
+      agenda.processEvery('15 minutes');
+      agenda.maxConcurrency(1);
+
+      agenda.define('job', {priority: 'highest'}, 
                     function(job, done){
 
         console.log('Verificando novos dados em ' + new Date() + '... ');   
@@ -60,7 +59,7 @@ module.exports = {
       });      
 
       agenda.on('ready', function(){
-
+               
         agenda.every('15 minutes', 'job');
 
         agenda.start();
