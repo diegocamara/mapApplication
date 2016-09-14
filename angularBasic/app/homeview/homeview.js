@@ -11,7 +11,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   .factory('CitizenRequestService', function ($http) {
 
-    var webServiceUrl = 'http://localhost:3000/';
+    var webServiceUrl = 'http://citizensrequests-blankblank.rhcloud.com/';
 
     return {
 
@@ -42,7 +42,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   .factory('LocationGeoJsonService', function ($http) {
 
-    var webServiceUrl = 'http://localhost:3000/';
+    var webServiceUrl = 'http://citizensrequests-blankblank.rhcloud.com/';
 
     var geoJsonUrl = webServiceUrl + 'getrecifegeojsonareas';
 
@@ -204,7 +204,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
           }
 
-          socketAction();
+          // socketAction();
           $scope.isLoading = false;
           leafletMap.invalidateSize(true);
 
