@@ -11,7 +11,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   .factory('CitizenRequestService', function ($http) {
 
-    var webServiceUrl = 'http://citizensrequests-blankblank.rhcloud.com/';
+    var webServiceUrl = 'https://citizensrequests-blankblank.rhcloud.com/';
 
     return {
 
@@ -42,7 +42,7 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
   .factory('LocationGeoJsonService', function ($http) {
 
-    var webServiceUrl = 'http://citizensrequests-blankblank.rhcloud.com/';
+    var webServiceUrl = 'https://citizensrequests-blankblank.rhcloud.com/';
 
     var geoJsonUrl = webServiceUrl + 'getrecifegeojsonareas';
 
@@ -178,13 +178,13 @@ angular.module('callsApplication.homeview', ['ngRoute', 'ngMaterial'])
 
               if (citizenRequest.loc && citizenRequest.loc.coordinates[0] !== '' && citizenRequest.loc.coordinates[1] !== '') {
 
-                console.log(citizenRequests[citizenRequestIndex]);       
+                // console.log(citizenRequests[citizenRequestIndex]);       
 
                 var longitude = citizenRequest.loc.coordinates[0];
                 var latitude = citizenRequest.loc.coordinates[1];
 
-                var marker = L.marker([latitude, longitude], { icon: orangeMarker , draggable: true})
-                  .bindPopup(citizenRequests[citizenRequestIndex].situacao  );
+                var marker = L.marker([latitude, longitude], { icon: orangeMarker})
+                  .bindPopup(citizenRequests[citizenRequestIndex].descricao);
 
                 markers.push(marker);
 
